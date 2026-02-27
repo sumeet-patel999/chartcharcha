@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chartcharcha — Daily Market Updates</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0d0f;
+    --surface: #111518;
+    --border: #1e2428;
+    --accent: #f0b429;
+    --accent2: #00e5a0;
+    --red: #ff4d6d;
+    --text: #e8eaed;
+    --muted: #6b7280;
+    --card: #13181c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: fixed; pointer-events: none; z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: transform 0.1s;
+  }
+  .cursor-ring {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(240,180,41,0.4);
+    border-radius: 50%;
+    position: fixed; pointer-events: none; z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.25s ease, width 0.2s, height 0.2s;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* Ticker */
+  .ticker-wrap {
+    background: var(--accent);
+    color: #000;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 8px 0;
+    position: relative; z-index: 10;
+  }
+  .ticker-inner {
+    display: inline-block;
+    animation: ticker 30s linear infinite;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+  }
+  @keyframes ticker {
+    0% { transform: translateX(100vw); }
+    100% { transform: translateX(-100%); }
+  }
+
+  /* Nav */
+  nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 5%;
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,13,15,0.85);
+    backdrop-filter: blur(12px);
+  }
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+  .nav-links { display: flex; gap: 32px; }
+  .nav-links a {
+    color: var(--muted); text-decoration: none;
+    font-size: 14px; font-weight: 500;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent); }
+  .nav-cta {
+    background: var(--accent); color: #000;
+    border: none; padding: 10px 22px;
+    border-radius: 4px; font-size: 14px; font-weight: 500;
+    cursor: none; transition: opacity 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* Hero */
+  .hero {
+    padding: 100px 5% 80px;
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+  }
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.3);
+    color: var(--accent); padding: 6px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase; margin-bottom: 24px;
+  }
+  .hero-tag::before { content: '●'; font-size: 8px; animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.8rem, 5vw, 4.2rem);
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+
+  .hero-desc {
+    color: var(--muted); font-size: 1.05rem; line-height: 1.7;
+    max-width: 480px; margin-bottom: 40px;
+  }
+
+  .cta-group { display: flex; gap: 16px; align-items: center; }
+  .btn-primary {
+    background: var(--accent); color: #000;
+    padding: 14px 28px; border-radius: 4px;
+    font-size: 15px; font-weight: 500; text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: inline-block;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(240,180,41,0.3); }
+  .btn-ghost {
+    color: var(--text); text-decoration: none;
+    font-size: 15px; font-weight: 400;
+    display: flex; align-items: center; gap: 8px;
+    transition: gap 0.2s;
+  }
+  .btn-ghost:hover { gap: 12px; }
+
+  /* Live chart card */
+  .hero-chart {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-chart::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 40%;
+    background: linear-gradient(to top, var(--card), transparent);
+    pointer-events: none;
+  }
+  .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .chart-title { font-size: 13px; color: var(--muted); font-weight: 400; margin-bottom: 4px; }
+  .chart-val { font-family: 'DM Mono', monospace; font-size: 1.8rem; font-weight: 500; }
+  .chart-change { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--accent2); }
+  .chart-change.red { color: var(--red); }
+
+  .mini-chart { width: 100%; height: 120px; }
+
+  .index-row { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .index-pill {
+    flex: 1; min-width: 100px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px;
+  }
+  .index-name { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+  .index-num { font-family: 'DM Mono', monospace; font-size: 1rem; font-weight: 500; margin: 4px 0 2px; }
+  .index-chg { font-size: 12px; font-family: 'DM Mono', monospace; }
+  .up { color: var(--accent2); }
+  .dn { color: var(--red); }
+
+  /* Stats strip */
+  .stats-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    position: relative; z-index: 1;
+  }
+  .stat-item {
+    padding: 32px 5%;
+    border-right: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-item:hover { background: var(--surface); }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem; font-weight: 700;
+    color: var(--accent); margin-bottom: 6px;
+  }
+  .stat-label { font-size: 13px; color: var(--muted); }
+
+  /* Features */
+  .section { padding: 80px 5%; position: relative; z-index: 1; }
+  .section-tag {
+    font-size: 12px; font-weight: 500; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 16px;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 3.5vw, 2.8rem);
+    font-weight: 700; margin-bottom: 16px; line-height: 1.15;
+  }
+  .section-sub { color: var(--muted); max-width: 520px; line-height: 1.7; margin-bottom: 56px; }
+
+  .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .feature-card {
+    background: var(--card); padding: 36px 30px;
+    transition: background 0.25s;
+    position: relative;
+  }
+  .feature-card:hover { background: var(--surface); }
+  .feature-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: rgba(240,180,41,0.12); border: 1px solid rgba(240,180,41,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 20px;
+  }
+  .feature-title { font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
+  .feature-desc { font-size: 14px; color: var(--muted); line-height: 1.65; }
+
+  /* Newsletter */
+  .newsletter {
+    margin: 0 5% 80px; z-index: 1; position: relative;
+    background: linear-gradient(135deg, #141a1f 0%, #0f1820 100%);
+    border: 1px solid var(--border); border-radius: 16px;
+    padding: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+    overflow: hidden;
+  }
+  .newsletter::before {
+    content: '';
+    position: absolute; top: -60px; right: -60px;
+    width: 240px; height: 240px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(240,180,41,0.12) 0%, transparent 70%);
+  }
+  .newsletter-title { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+  .newsletter-desc { color: var(--muted); font-size: 15px; line-height: 1.6; }
+  .email-form { display: flex; gap: 12px; }
+  .email-input {
+    flex: 1; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px 18px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .email-input:focus { border-color: var(--accent); }
+  .email-input::placeholder { color: var(--muted); }
+  .email-btn {
+    background: var(--accent); color: #000;
+    border: none; padding: 14px 24px; border-radius: 6px;
+    font-weight: 600; font-size: 14px; cursor: none;
+    font-family: 'DM Sans', sans-serif;
+    white-space: nowrap; transition: opacity 0.2s;
+  }
+  .email-btn:hover { opacity: 0.85; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 36px 5%; display: flex; justify-content: space-between; align-items: center;
+    position: relative; z-index: 1;
+  }
+  .footer-logo { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700; }
+  .footer-logo span { color: var(--accent); }
+  footer p { color: var(--muted); font-size: 13px; }
+  .footer-links { display: flex; gap: 24px; }
+  .footer-links a { color: var(--muted); text-decoration: none; font-size: 13px; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--accent); }
+
+  /* Scroll fade-in */
+  .fade-up { opacity: 0; transform: translateY(28px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    .hero { grid-template-columns: 1fr; padding: 60px 5%; }
+    .hero-chart { display: none; }
+    .stats-strip { grid-template-columns: repeat(2,1fr); }
+    .features-grid { grid-template-columns: 1fr; }
+    .newsletter { grid-template-columns: 1fr; padding: 36px; }
+    .email-form { flex-direction: column; }
+    footer { flex-direction: column; gap: 20px; text-align: center; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- Ticker -->
+<div class="ticker-wrap">
+  <div class="ticker-inner" id="tickerText">Loading market data…</div>
+</div>
+
+<!-- Nav -->
+<nav>
+  <div class="logo">Chart<span>charcha</span></div>
+  <div class="nav-links">
+    <a href="#">Market Today</a>
+    <a href="#">Sectors</a>
+    <a href="#">Analysis</a>
+    <a href="#">About</a>
+  </div>
+  <button class="nav-cta">Subscribe Free →</button>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-tag">Live Market Insights</div>
+    <h1>India's Markets, <em>Explained</em> Daily.</h1>
+    <p class="hero-desc">Chartcharcha delivers sharp, no-jargon market commentary every morning. Charts, trends, and what actually matters — by Sumeet.</p>
+    <div class="cta-group">
+      <a href="#subscribe" class="btn-primary">Get Daily Updates →</a>
+      <a href="#" class="btn-ghost">See Sample <span>↗</span></a>
+    </div>
+  </div>
+
+  <!-- Live Chart Card -->
+  <div class="hero-chart fade-up">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">NIFTY 50</div>
+        <div class="chart-val" id="niftyVal">—</div>
+        <div class="chart-change" id="niftyChg">Fetching…</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px" id="liveDate">—</div>
+        <div style="font-size:11px;color:var(--accent2)" id="liveStatus">⟳ Loading</div>
+      </div>
+    </div>
+    <svg class="mini-chart" viewBox="0 0 400 120" preserveAspectRatio="none" id="miniChartSvg">
+      <defs>
+        <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#00e5a0" stop-opacity="0.3"/>
+          <stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <path id="chartLine" d="" fill="none" stroke="#00e5a0" stroke-width="2.5"/>
+      <path id="chartFill" d="" fill="url(#cg)"/>
+    </svg>
+    <div class="index-row">
+      <div class="index-pill">
+        <div class="index-name">SENSEX</div>
+        <div class="index-num" id="sensexVal">—</div>
+        <div class="index-chg" id="sensexChg">—</div>
+      </div>
+      <div class="index-pill">
+        <div class="index-name">BANK NIFTY</div>
+        <div class="index-num" id="bankNiftyVal">—</div>
+        <div class="index-chg" id="bankNiftyChg">—</div>
+      </div>
+      <div class="index-pill">
+        <div class="index-name">INDIA VIX</div>
+        <div class="index-num" id="vixVal">—</div>
+        <div class="index-chg" id="vixChg">—</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<div class="stats-strip">
+  <div class="stat-item fade-up">
+    <div class="stat-num">5K+</div>
+    <div class="stat-label">Daily Readers</div>
+  </div>
+  <div class="stat-item fade-up" style="transition-delay:0.1s">
+    <div class="stat-num">365</div>
+    <div class="stat-label">Updates Per Year</div>
+  </div>
+  <div class="stat-item fade-up" style="transition-delay:0.2s">
+    <div class="stat-num">8AM</div>
+    <div class="stat-label">Every Market Morning</div>
+  </div>
+  <div class="stat-item fade-up" style="transition-delay:0.3s">
+    <div class="stat-num">100%</div>
+    <div class="stat-label">Free to Subscribe</div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="section">
+  <div class="section-tag">What You Get</div>
+  <h2 class="section-title">Everything you need. Nothing you don't.</h2>
+  <p class="section-sub">No fluff, no sensationalism. Just clean market analysis you can actually use — served fresh every morning before the bell.</p>
+
+  <div class="features-grid">
+    <div class="feature-card fade-up">
+      <div class="feature-icon">📊</div>
+      <div class="feature-title">Chart Breakdowns</div>
+      <div class="feature-desc">Key levels, patterns, and price action explained visually so you always know what the chart is saying.</div>
+    </div>
+    <div class="feature-card fade-up" style="transition-delay:0.1s">
+      <div class="feature-icon">🔦</div>
+      <div class="feature-title">Sector Spotlight</div>
+      <div class="feature-desc">Which sectors are moving and why — with context on FII/DII flow, earnings, and macro triggers.</div>
+    </div>
+    <div class="feature-card fade-up" style="transition-delay:0.2s">
+      <div class="feature-icon">🗞️</div>
+      <div class="feature-title">News That Moves Markets</div>
+      <div class="feature-desc">Cut through the noise. Only the headlines that actually shift indices or individual stocks make it in.</div>
+    </div>
+    <div class="feature-card fade-up" style="transition-delay:0.3s">
+      <div class="feature-icon">📅</div>
+      <div class="feature-title">Events & Triggers</div>
+      <div class="feature-desc">RBI policy, F&O expiry, results calendar — know what's coming before the market reacts.</div>
+    </div>
+    <div class="feature-card fade-up" style="transition-delay:0.4s">
+      <div class="feature-icon">💡</div>
+      <div class="feature-title">Sumeet's Take</div>
+      <div class="feature-desc">An honest, unbiased perspective on the day's theme. No tips. No recommendations. Just insight.</div>
+    </div>
+    <div class="feature-card fade-up" style="transition-delay:0.5s">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Pre-Market Ready</div>
+      <div class="feature-desc">Lands in your inbox by 8 AM so you're prepared before the opening bell, not scrambling after it.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Newsletter -->
+<div id="subscribe" class="newsletter fade-up">
+  <div>
+    <div class="section-tag" style="margin-bottom:12px">Free Newsletter</div>
+    <div class="newsletter-title">Start your mornings with market clarity.</div>
+    <div class="newsletter-desc">Join thousands of traders and investors who read Chartcharcha every day. No spam. Unsubscribe anytime.</div>
+  </div>
+  <div>
+    <div class="email-form">
+      <input class="email-input" type="email" placeholder="your@email.com" />
+      <button class="email-btn">Subscribe Free →</button>
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:12px;">📬 Delivered every trading day at 8 AM IST</p>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-logo">Chart<span>charcha</span></div>
+  <p style="color:var(--muted);font-size:13px;">© 2026 Chartcharcha by Sumeet. All rights reserved.</p>
+  <div class="footer-links">
+    <a href="#">Twitter</a>
+    <a href="#">Telegram</a>
+    <a href="#">Archive</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
+
+<script>
+  // ─── Custom Cursor ───────────────────────────────────────────
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+    setTimeout(() => {
+      ring.style.left = e.clientX + 'px';
+      ring.style.top = e.clientY + 'px';
+    }, 80);
+  });
+
+  // ─── Scroll Fade-In ──────────────────────────────────────────
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // ─── Live Market Data via Yahoo Finance ──────────────────────
+  // Symbols: ^NSEI = NIFTY50, ^BSESN = SENSEX, ^NSEBANK = Bank Nifty, ^INDIAVIX = India VIX
+  const SYMBOLS = ['^NSEI', '^BSESN', '^NSEBANK', '^INDIAVIX',
+                   'RELIANCE.NS', 'TCS.NS', 'HDFCBANK.NS', 'INFY.NS', 'WIPRO.NS'];
+
+  // Yahoo Finance via public CORS proxy (no API key needed)
+  async function fetchQuote(symbol) {
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1mo`;
+    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxy);
+    const data = await res.json();
+    const meta = data.chart.result[0].meta;
+    const closes = data.chart.result[0].indicators.quote[0].close.filter(Boolean);
+    return {
+      symbol,
+      price: meta.regularMarketPrice,
+      prevClose: meta.chartPreviousClose,
+      change: meta.regularMarketPrice - meta.chartPreviousClose,
+      changePct: ((meta.regularMarketPrice - meta.chartPreviousClose) / meta.chartPreviousClose) * 100,
+      history: closes
+    };
+  }
+
+  function fmt(n) { return n >= 1000 ? n.toLocaleString('en-IN', {maximumFractionDigits: 2}) : n.toFixed(2); }
+
+  function applyChange(valEl, chgEl, price, changePct, change) {
+    valEl.textContent = fmt(price);
+    const up = change >= 0;
+    chgEl.textContent = `${up ? '▲' : '▼'} ${Math.abs(change).toFixed(2)} (${up ? '+' : ''}${changePct.toFixed(2)}%)`;
+    chgEl.className = 'index-chg ' + (up ? 'up' : 'dn');
+  }
+
+  function drawMiniChart(history, isUp) {
+    const color = isUp ? '#00e5a0' : '#ff4d6d';
+    const min = Math.min(...history), max = Math.max(...history);
+    const range = max - min || 1;
+    const pts = history.map((v, i) => {
+      const x = (i / (history.length - 1)) * 400;
+      const y = 110 - ((v - min) / range) * 100;
+      return `${x},${y}`;
+    });
+    const linePath = 'M' + pts.join(' L');
+    const fillPath = linePath + ` L400,120 L0,120Z`;
+    const lineEl = document.getElementById('chartLine');
+    const fillEl = document.getElementById('chartFill');
+    lineEl.setAttribute('d', linePath);
+    lineEl.setAttribute('stroke', color);
+    fillEl.setAttribute('d', fillPath);
+    document.querySelector('#cg stop:first-child').setAttribute('stop-color', color);
+  }
+
+  function buildTicker(quotes) {
+    const labels = {
+      '^NSEI': 'NIFTY 50', '^BSESN': 'SENSEX', '^NSEBANK': 'BANK NIFTY', '^INDIAVIX': 'INDIA VIX',
+      'RELIANCE.NS': 'RELIANCE', 'TCS.NS': 'TCS', 'HDFCBANK.NS': 'HDFC BANK',
+      'INFY.NS': 'INFOSYS', 'WIPRO.NS': 'WIPRO'
+    };
+    return quotes.map(q => {
+      const up = q.change >= 0;
+      return `${labels[q.symbol] || q.symbol} &nbsp;${up ? '▲' : '▼'} ${fmt(q.price)} (${up ? '+' : ''}${q.changePct.toFixed(2)}%)`;
+    }).join('&nbsp;&nbsp;&nbsp;●&nbsp;&nbsp;&nbsp;') + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+  }
+
+  async function loadMarketData() {
+    try {
+      const quotes = await Promise.all(SYMBOLS.map(s => fetchQuote(s).catch(() => null)));
+      const valid = quotes.filter(Boolean);
+
+      // Update ticker
+      document.getElementById('tickerText').innerHTML = buildTicker(valid);
+
+      // Update NIFTY hero card
+      const nifty = valid.find(q => q.symbol === '^NSEI');
+      if (nifty) {
+        document.getElementById('niftyVal').textContent = fmt(nifty.price);
+        const up = nifty.change >= 0;
+        const chgEl = document.getElementById('niftyChg');
+        chgEl.textContent = `${up ? '▲' : '▼'} ${Math.abs(nifty.change).toFixed(2)} (${up ? '+' : ''}${nifty.changePct.toFixed(2)}%) Today`;
+        chgEl.className = 'chart-change' + (up ? '' : ' red');
+        drawMiniChart(nifty.history, up);
+      }
+
+      // Update date & live badge
+      const now = new Date();
+      document.getElementById('liveDate').textContent = now.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+      document.getElementById('liveStatus').textContent = '● LIVE';
+
+      // Update index pills
+      const sensex = valid.find(q => q.symbol === '^BSESN');
+      if (sensex) applyChange(document.getElementById('sensexVal'), document.getElementById('sensexChg'), sensex.price, sensex.changePct, sensex.change);
+
+      const bankNifty = valid.find(q => q.symbol === '^NSEBANK');
+      if (bankNifty) applyChange(document.getElementById('bankNiftyVal'), document.getElementById('bankNiftyChg'), bankNifty.price, bankNifty.changePct, bankNifty.change);
+
+      const vix = valid.find(q => q.symbol === '^INDIAVIX');
+      if (vix) applyChange(document.getElementById('vixVal'), document.getElementById('vixChg'), vix.price, vix.changePct, vix.change);
+
+    } catch (err) {
+      console.warn('Market data unavailable:', err);
+      document.getElementById('tickerText').innerHTML = 'Market data temporarily unavailable — check back shortly.';
+      document.getElementById('liveStatus').textContent = '⚠ Offline';
+    }
+  }
+
+  // Load on page start, then refresh every 5 minutes
+  loadMarketData();
+  setInterval(loadMarketData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
